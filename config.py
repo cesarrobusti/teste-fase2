@@ -19,7 +19,7 @@ from pathlib import Path
 # arquivos do projeto fiquem juntos na mesma pasta. Não precisa
 # editar isto ao mover o projeto para outra máquina.
 # ------------------------------------------------------------
-DIR_TRABALHO = Path(__file__).resolve().parent
+DIR_TRABALHO = "cesarrobusti/teste"
 os.chdir(DIR_TRABALHO)
 
 # ------------------------------------------------------------
