@@ -10,7 +10,7 @@ O classificador utiliza um modelo de linguagem **BERTimbau** finetunado para o d
 
 O aplicativo está disponível diretamente no navegador, pronto para uso em qualquer computador (Windows, macOS ou Linux):
 
-👉 **[Acessar o Classificador de Impacto]([https://share.streamlit.io/](https://testeimpacto.streamlit.app/))** *(substitua pelo seu link do Streamlit)*
+👉 **[Acessar o Classificador de Impacto](https://testeimpacto.streamlit.app/)**
 
 > **Não é necessário instalar Python, Git ou bibliotecas no seu computador.** Toda a infraestrutura roda na nuvem via Streamlit Community Cloud, com download dinâmico dos pesos via Hugging Face Hub.
 
