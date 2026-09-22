@@ -1,0 +1,23 @@
+Categorias de impacto: Impacto Instrumental
+Categorias de impacto: Impacto de Construção de Capacidade
+Categorias de impacto: Impactos Relacionais/de Rede
+Engajamento de Stakeholders: Coprodução
+Engajamento de Stakeholders: Identificação e Seleção de Stakeholders
+Engajamento de Stakeholders: Interação Cíclica
+Engajamento de Stakeholders: Interação Linear
+Métodos de avaliação: Altmetria
+Métodos de avaliação: Análise bibliométrica
+Métodos de avaliação: Escalas de pontuação e sistemas de classificação
+Nível de Influência Geográfica: Internacional
+Nível de Influência Geográfica: Local
+Nível de Influência Geográfica: Nacional
+Nível de Influência Geográfica: Regional
+Áreas de impacto: Econômica
+Áreas de impacto: Educacional
+Áreas de impacto: Impacto Intrauniversitários
+Áreas de impacto: Impacto comunicacional
+Áreas de impacto: Impacto de Construção de Parcerias
+Áreas de impacto: Organizacional
+Áreas de impacto: Produção Científica e de Conhecimento
+Áreas de impacto: Social e Cultural
+Áreas de impacto: Tecnologia e Inovação
