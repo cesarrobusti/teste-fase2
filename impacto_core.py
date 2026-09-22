@@ -68,19 +68,25 @@ def carregar_referencia():
 
 
 def carregar_modelo():
-    """Carrega o tokenizer e o modelo BERT com configuração explícita."""
-    # Tokenizer direto do repositório
-    tokenizer = BertTokenizerFast.from_pretrained(DIR_MODELO)
+    """Carrega o modelo apontando para a subpasta do Hugging Face."""
+    # Se os arquivos estiverem dentro da subpasta 'modelo_impacto' no Hugging Face:
+    SUBPASTA = "modelo_impacto"  # ou use None se estiverem na raiz
+
+    tokenizer = BertTokenizerFast.from_pretrained(
+        DIR_MODELO, 
+        subfolder=SUBPASTA
+    )
     
-    # Carrega a configuração original do BERTimbau e associa ao repositório
     try:
-        config = AutoConfig.from_pretrained(DIR_MODELO)
+        config = AutoConfig.from_pretrained(DIR_MODELO, subfolder=SUBPASTA)
     except Exception:
-        # Fallback caso falte model_type no config.json do Hugging Face
         config = AutoConfig.from_pretrained(MODEL_NAME)
-    
-    # Carrega o modelo com a arquitetura Bert explicitada
-    model = BertForSequenceClassification.from_pretrained(DIR_MODELO, config=config)
+        
+    model = BertForSequenceClassification.from_pretrained(
+        DIR_MODELO, 
+        subfolder=SUBPASTA, 
+        config=config
+    )
     
     model.to(DEVICE)
     model.eval()
