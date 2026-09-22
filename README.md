@@ -1,235 +1,83 @@
-# Classificador de Impacto de Pesquisa
+# 📊 Classificador de Impacto de Pesquisa
 
-Sistema que identifica automaticamente trechos de relatórios com evidências
-de impacto de pesquisa e classifica cada trecho com as tags apropriadas,
-usando um modelo BERTimbau treinado a partir de quotations já classificadas
-manualmente.
+Sistema online baseado em Processamento de Linguagem Natural (PLN) para identificar e classificar automaticamente evidências de impacto científico, tecnológico e socioeconômico em relatórios técnicos e acadêmicos.
 
-Este documento é o guia **técnico**, para quem mantém/desenvolve o projeto.
-Se você só vai usar o programa pronto (sem treinar nada), use o
-`LEIA-ME.md` em vez deste.
+O classificador utiliza um modelo de linguagem **BERTimbau** finetunado para o domínio de impacto a partir de trechos anotados manualmente (*quotations*).
 
 ---
 
-## 1. Estrutura de pastas necessária
+## 🚀 Acesso Rápido (Sem Instalação)
 
-Todos os arquivos abaixo devem estar **na mesma pasta**:
+O aplicativo está disponível diretamente no navegador, pronto para uso em qualquer computador (Windows, macOS ou Linux):
 
-```
-📁 Projeto_Impacto/
-│
-├── 📄 config.py                     ← configurações (caminhos, thresholds, chaves)
-├── 📄 dados_treino.py               ← preparação de dados, compartilhada pelos 3 treinadores
-├── 📄 treinar_modelo.py             ← treina o BERTimbau (modelo de produção)
-├── 📄 treinar_modelo_setfit.py      ← treina o SetFit (comparação/experimental)
-├── 📄 treinar_modelo_tfidf.py       ← treina o baseline TF-IDF + LogReg (comparação)
-├── 📄 analisar_relatorio.py         ← analisa 1 relatório, sem tela (terminal)
-├── 📄 impacto_core.py               ← funções internas usadas pelo app.py
-├── 📄 impacto_ai.py                 ← integração com IA (Gemini) para comentário interpretativo
-├── 📄 tags_impacto.py               ← lista completa de tags (edite aqui para adicionar/remover tags)
-├── 📄 app.py                        ← programa com tela visual (Streamlit)
-├── 📄 requirements.txt              ← lista de dependências do Python
-├── 📄 instalar.bat                  ← instala tudo (rodar 1 vez)
-├── 📄 iniciar_app.bat               ← abre o programa visual (uso diário)
-├── 📄 README.md                     ← este arquivo (guia técnico)
-├── 📄 LEIA-ME.md                    ← guia para quem só usa o app pronto
-│
-├── 📄 Artigo - Impact Tagging-quotations.xlsx   ← Excel de treino original
-├── 📄 quotations_revisadas.xlsx                 ← gerado pelo app.py (correções/aprendizado ativo)
-├── 📄 [nome do relatório].txt ou .docx          ← relatório a ser analisado
-│
-├── 📁 modelo_impacto/               ← modelo de PRODUÇÃO (BERTimbau) — criado ao rodar treinar_modelo.py
-├── 📁 modelo_impacto_setfit/        ← modelo de comparação (SetFit) — opcional
-└── 📁 modelo_impacto_tfidf/         ← modelo de comparação (TF-IDF) — opcional
-```
+👉 **[Acessar o Classificador de Impacto]([https://share.streamlit.io/](https://testeimpacto.streamlit.app/))** *(substitua pelo seu link do Streamlit)*
 
-Você **não precisa criar** as pastas `modelo_impacto*/` manualmente — elas
-são geradas sozinhas ao rodar o script de treino correspondente.
-
-> **Nota sobre `modelo_impacto_setfit/` e `modelo_impacto_tfidf/`:** esses
-> dois só existem para comparar candidatos a modelo. Depois dos testes,
-> **o BERTimbau (`modelo_impacto/`) venceu em todas as métricas** e é o
-> modelo usado pelo `app.py`/`analisar_relatorio.py`. Os outros dois
-> podem ser removidos da versão final que for distribuída — servem só
-> para a fase de experimentação.
+> **Não é necessário instalar Python, Git ou bibliotecas no seu computador.** Toda a infraestrutura roda na nuvem via Streamlit Community Cloud, com download dinâmico dos pesos via Hugging Face Hub.
 
 ---
 
-## 2. Para que serve cada arquivo
+## 📖 Como Usar o Aplicativo
 
-| Arquivo | O que é | Quando usar |
-|---|---|---|
-| `config.py` | Guarda todos os caminhos, parâmetros e nomes de modelo | Editar sempre que trocar de relatório ou ajustar parâmetros |
-| `dados_treino.py` | Lê, limpa, filtra tags raras e faz o split treino/teste — usado pelos 3 treinadores, garante comparação justa entre eles. Também combina `quotations_revisadas.xlsx` automaticamente | Nunca precisa rodar isso diretamente |
-| `treinar_modelo.py` | Treina o **BERTimbau** (modelo de produção) | Rodar na primeira vez, e sempre que quiser incorporar novas quotations ou correções ao modelo |
-| `treinar_modelo_setfit.py` | Treina um modelo **SetFit** alternativo, para comparação | Opcional — só para experimentação/comparação |
-| `treinar_modelo_tfidf.py` | Treina um baseline **TF-IDF + Regressão Logística**, para comparação | Opcional — só para experimentação/comparação |
-| `analisar_relatorio.py` | Analisa **um** relatório usando o modelo já treinado, direto pelo terminal/VSCode (sem tela visual) | Alternativa ao app visual |
-| `impacto_core.py` | Funções internas (TF-IDF, classificação, extração de .docx) usadas pelo `app.py` | Nunca precisa abrir isso |
-| `impacto_ai.py` | Integração com a API do Google Gemini para gerar comentário interpretativo | Nunca precisa abrir isso |
-| `tags_impacto.py` | Lista completa de tags, organizada por bloco, usada no seletor da tela de revisão | **Editar aqui** sempre que uma tag for criada, renomeada ou removida |
-| `app.py` | O programa com **tela visual** no navegador | Uso do dia a dia, via `iniciar_app.bat` |
-| `requirements.txt` | Lista das bibliotecas Python necessárias | Usado automaticamente por `instalar.bat` |
-| `instalar.bat` | Instala o Python virtual e as dependências | Rodar **uma única vez**, ao configurar o computador |
-| `iniciar_app.bat` | Abre o app visual no navegador com 2 cliques | Toda vez que for usar o programa |
-| `modelo_impacto/` (pasta) | Modelo de produção já treinado (BERTimbau) | Gerada automaticamente; precisa existir para o app funcionar |
-| `quotations_revisadas.xlsx` | Correções feitas na tela de revisão do app (aprendizado ativo) | Gerado automaticamente pelo app; entra no próximo treino sem ação manual |
+### Passo ① — Enviar o(s) relatório(s)
+Você pode analisar relatórios de duas maneiras:
+* **📎 Enviar arquivo(s):** Selecione um ou vários arquivos em formato `.txt` ou `.docx` (Word). *Caso possua um arquivo antigo `.doc`, abra no Word e salve como `.docx` antes de enviar.*
+* **📋 Colar texto diretamente:** Cole trechos de textos ou minutas para análise rápida no formulário.
 
----
+### Passo ② — Executar a Análise
+Clique em **"🔍 Analisar relatório(s)"**. O sistema executa o pipeline em duas etapas:
+1. **Filtro de Relevância (TF-IDF):** Segmenta o texto em parágrafos e seleciona apenas os trechos com similaridade semântica com evidências humanas de referência.
+2. **Classificação Multilabel (BERTimbau):** O modelo infere as probabilidades de cada uma das tags de impacto sobre os trechos pré-selecionados.
 
-## 3. Configuração inicial (fazer uma vez só)
+### Passo ③ — Visualizar e Baixar os Resultados
+* Os resultados são exibidos em uma tabela dinâmica com os trechos extraídos, as tags atribuídas, o percentual de confiança e o marcador de **revisão humana** (trechos com confiança limítrofe).
+* Baixe os relatórios estruturados nos formatos:
+  * **📊 Excel (.xlsx):** Inclui abas separadas para os trechos classificados e para o sumário de frequência das tags.
+  * **📄 CSV (.csv):** Formato tabular leve compatível com softwares estatísticos e bancos de dados.
 
-### Passo 1 — Instalar o Python (se ainda não tiver)
-Baixe o Python 3.10, 3.11 ou 3.12 em [python.org](https://www.python.org/downloads/)
-e instale marcando a opção **"Add python.exe to PATH"** durante a instalação.
+### Passo ④ — Revisão e Aprendizado Ativo *(Opcional)*
+Permite que o pesquisador corrija manualmente previsões incorretas ou trechos marcados para revisão humana. As correções podem ser salvas para compor futuras rodadas de retreinamento do modelo.
 
-### Passo 2 — Instalar as dependências
-Dê **duplo clique em `instalar.bat`**. Uma janela preta vai abrir e instalar
-tudo sozinha (pode demorar alguns minutos, principalmente por causa do
-`torch`, que é um pacote grande). Aguarde até aparecer "Instalação concluída".
+### Passo ⑤ — Impacto AI: Análise Interpretativa *(Opcional)*
+Gera um diagnóstico textual interpretativo dos padrões de impacto encontrados, sintetizado por Inteligência Artificial generativa:
+1. Obtenha uma chave gratuita da API do Google Gemini em [aistudio.google.com/apikey](https://aistudio.google.com/apikey).
+2. Cole sua chave no campo **"Sua chave de API do Gemini"** na barra lateral do app e clique em **"Validar chave"**.
+3. Clique em **"🧠 Gerar comentário interpretativo"** para produzir o resumo.
 
-### Passo 3 — Treinar o modelo (primeira vez)
-Abra o `config.py` e confira se `ARQUIVO_TREINO` está com o nome exato do
-seu Excel de quotations classificadas. Depois, no VSCode (ou terminal, com
-o ambiente virtual ativado), rode:
-
-```
-python treinar_modelo.py
-```
-
-Isso vai treinar o BERTimbau e criar a pasta `modelo_impacto/`. Pode demorar
-bastante tempo (na base atual, ~2h). **Você só precisa fazer isso de novo
-se adicionar novas quotations classificadas ou revisar/corrigir trechos
-pelo app** (seção 6).
-
-Os scripts `treinar_modelo_setfit.py` e `treinar_modelo_tfidf.py` são
-opcionais — usados apenas para comparar candidatos a modelo. Não são
-necessários para o uso normal do sistema.
+*A chave é individual, não tem custo e fica restrita apenas à sessão atual do seu navegador (não é salva em banco de dados nem no servidor).*
 
 ---
 
-## 4. Uso do dia a dia
+## 🛠️ Arquitetura e Estrutura Técnica
 
-Depois da configuração inicial (seção 3), o uso normal é bem simples:
+Para pesquisadores e desenvolvedores que desejam inspecionar o pipeline ou rodar experimentos:
 
-1. Dê **duplo clique em `iniciar_app.bat`**.
-2. Uma janela do navegador abre automaticamente com o programa.
-3. Siga os passos numerados na tela: ① envie o relatório (.txt ou .docx) →
-   ② clique em "Analisar" → ③ baixe o resultado em Excel ou CSV.
-4. Para fechar o programa, feche a janela preta (terminal) que abriu junto.
+### 1. Desacoplamento Nuvem
+* **Código e Interface:** Hospedados neste repositório GitHub (`cesarrobusti/teste-fase2`).
+* **Pesos do Modelo (~400 MB):** Hospedados publicamente no Hugging Face Hub (`cesarrobusti/teste`).
+* **Deploy e Execução:** Gerenciados pelo Streamlit Community Cloud com cacheamento em memória (`@st.cache_resource`).
 
-**Não precisa mexer em código nenhum para o uso diário.**
+### 2. Principais Componentes
+* `app.py`: Interface de usuário, formulários e renderização de tabelas (Streamlit).
+* `impacto_core.py`: Lógica do pipeline de inferência, extração de texto de arquivos `.docx`/`.txt`, vetorização TF-IDF e inferência PyTorch.
+* `config.py`: Parâmetros do modelo, limiares de confiança (*thresholds*) e caminhos de referência.
+* `impacto_ai.py`: Integração com a API do Google Gemini para síntese qualitativa.
+* `tags_impacto.py`: Dicionário e categorização das tags de impacto aceitas pelo classificador.
 
-### Alternativa sem tela visual
-Se preferir rodar pelo terminal/VSCode em vez do app visual: edite
-`NOVO_RELATORIO` em `config.py` com o nome do arquivo, depois rode:
+### 3. Execução Local para Desenvolvimento (Opcional)
+Caso queira modificar o código localmente:
 
-```
-python analisar_relatorio.py
-```
+```bash
+# 1. Clone o repositório
+git clone [https://github.com/cesarrobusti/teste-fase2.git](https://github.com/cesarrobusti/teste-fase2.git)
+cd teste-fase2
 
-O resultado é salvo direto no arquivo definido em `ARQUIVO_RESULTADO`
-(também em `config.py`).
+# 2. Crie e ative um ambiente virtual
+python -m venv .venv
+source .venv/bin/activate   # No Linux/macOS
+.venv\Scripts\activate      # No Windows
 
----
+# 3. Instale as dependências
+pip install -r requirements.txt
 
-## 5. Comentário interpretativo com IA (Impacto AI)
-
-O app inclui um recurso opcional (passo ⑤ na tela), chamado **Impacto AI**,
-que gera um comentário interpretativo automático sobre os resultados de um
-relatório, usando a API do **Google Gemini**.
-
-**Cada pesquisador usa a própria chave gratuita**, obtida em
-[aistudio.google.com](https://aistudio.google.com/apikey). Isso significa:
-
-- **Nenhum custo para quem hospeda/distribui o programa** — cada pessoa
-  sustenta seu próprio uso da cota gratuita do Google.
-- A chave é colada na barra lateral do app e fica **apenas na sessão do
-  navegador** (nunca é salva em disco por este programa).
-- Sem chave, o app funciona normalmente — esse recurso é 100% opcional.
-
-O modelo usado é definido em `config.py` (`GEMINI_MODEL_NAME`), atualmente
-`gemini-3.5-flash-lite` (camada gratuita do Google). **Atenção:** o Google
-descontinua modelos com alguma frequência — se parar de funcionar com erro
-"model ... is no longer available", troque `GEMINI_MODEL_NAME` pelo nome
-indicado na própria mensagem de erro, ou confira a lista atual em
-[ai.google.dev/gemini-api/docs/models](https://ai.google.dev/gemini-api/docs/models).
-A integração usa o SDK novo do Google (`google-genai`) — se atualizar
-manualmente, não confunda com o pacote antigo `google-generativeai`,
-que foi descontinuado.
-
----
-
-## 6. Revisão e aprendizado ativo
-
-No app, depois de analisar um relatório, a seção ④ ("Revisar, corrigir e
-ensinar o modelo") permite corrigir manualmente as tags previstas —
-especialmente útil nos trechos marcados para revisão (confiança baixa).
-
-Essas correções são salvas em `quotations_revisadas.xlsx`. Da próxima vez
-que você rodar `treinar_modelo.py`, o `dados_treino.py` combina
-automaticamente esse arquivo com o Excel de treino original — sem
-precisar copiar nada manualmente. Se o mesmo trecho aparecer nos dois
-arquivos, a versão corrigida por você prevalece.
-
-> ⚠️ **Nota sobre o status atual deste recurso:** por enquanto, o fluxo
-> de revisão/retreino está ativo apenas para fins de teste e validação do
-> pipeline (rodando localmente). Na versão final que for distribuída para
-> os pesquisadores, essa seção pode ser removida da interface — avalie
-> se faz sentido manter, dependendo de quem terá acesso ao retreino.
-
----
-
-## 7. Comparando os 3 classificadores (BERTimbau, SetFit, TF-IDF)
-
-Os três scripts de treino (`treinar_modelo.py`, `treinar_modelo_setfit.py`,
-`treinar_modelo_tfidf.py`) usam o **mesmo** conjunto de treino/teste (via
-`dados_treino.py`), então as métricas impressas ao final
-(`eval_f1_macro`, `eval_f1_micro`, `eval_f1_weighted`) são diretamente
-comparáveis entre eles.
-
-Resultado da última comparação feita neste projeto:
-
-| Modelo | F1 macro | F1 micro | F1 weighted | Tempo de treino |
-|---|---|---|---|---|
-| **BERTimbau** (produção) | **0,363** | **0,560** | **0,532** | ~2h |
-| SetFit | 0,328 | 0,531 | 0,438 | ~8h |
-| TF-IDF + LogReg | 0,146 | 0,367 | 0,311 | segundos |
-
-BERTimbau venceu em todas as métricas e ainda foi mais rápido que o
-SetFit nesta base — por isso é o modelo usado em produção.
-
----
-
-## 8. Compartilhando com outros pesquisadores
-
-Para a versão final de distribuição, veja o `LEIA-ME.md` — ele já lista
-exatamente o subconjunto de arquivos necessário para quem só vai usar o
-programa pronto (sem os scripts de treino/comparação).
-
----
-
-## 9. Perguntas frequentes
-
-**"Já treinei o modelo, preciso rodar `treinar_modelo.py` de novo todo dia?"**
-Não. Treine uma vez, e use `app.py` (ou `analisar_relatorio.py`) para
-analisar quantos relatórios quiser. Retreine se adicionar novas
-quotations classificadas, ou se acumular correções pelo app (seção 6).
-
-**"O app não abre / diz que não encontrou o modelo"**
-Confira se a pasta `modelo_impacto/` existe e está na mesma pasta do
-`app.py`. Se não existir, rode `treinar_modelo.py` primeiro.
-
-**"Posso analisar um arquivo .doc antigo do Word?"**
-Não diretamente — abra o arquivo no Word e use "Salvar como" → "Word
-Document (.docx)", depois envie o `.docx` gerado.
-
-**"Onde ajusto o quanto o modelo é 'rigoroso' para aceitar uma tag?"**
-No app visual, na barra lateral, em "Parâmetros avançados". No
-`analisar_relatorio.py`, edite `SIMILARITY_THRESHOLD` e
-`CLASSIFICATION_THRESHOLD` em `config.py`.
-
-**"O comentário de IA é confiável?"**
-É um apoio interpretativo, não uma conclusão definitiva — sempre trate
-como um rascunho a ser revisado, principalmente porque ele é gerado só a
-partir do resumo estruturado dos resultados, não do relatório completo.
+# 4. Inicie o app localmente
+streamlit run app.py
