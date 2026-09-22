@@ -19,7 +19,7 @@ from pathlib import Path
 # arquivos do projeto fiquem juntos na mesma pasta. Não precisa
 # editar isto ao mover o projeto para outra máquina.
 # ------------------------------------------------------------
-DIR_TRABALHO = "cesarrobusti/teste"
+DIR_TRABALHO = Path(__file__).resolve().parent
 os.chdir(DIR_TRABALHO)
 
 # ------------------------------------------------------------
@@ -56,9 +56,7 @@ NOVO_RELATORIO = "Proposta_24009016_UNIVERSIDADE_FEDERAL_DE_CAMPINA_GRANDE_(UFCG
 # Cada classificador salva em uma pasta separada, para você
 # poder treinar e comparar os 3 sem que um sobrescreva o outro.
 # ------------------------------------------------------------
-DIR_MODELO = "./modelo_impacto"              # BERTimbau
-DIR_MODELO_SETFIT = "./modelo_impacto_setfit"  # SetFit
-DIR_MODELO_TFIDF = "./modelo_impacto_tfidf"    # TF-IDF + Regressão Logística
+DIR_MODELO = "cesarrobusti/teste"              # BERTimbau
 ARQUIVO_RESULTADO = "resultado_relatorio_159.xlsx"
 
 # ------------------------------------------------------------
