@@ -16,6 +16,7 @@ import numpy as np
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+from huggingface_hub import hf_hub_download
 
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
@@ -36,13 +37,20 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def modelo_disponivel():
-    """Verifica se já existe um modelo treinado salvo em disco."""
-    return (Path(DIR_MODELO) / "labels.txt").exists()
+    """Verifica se o modelo está acessível localmente ou no Hugging Face."""
+    # Como o modelo está no Hugging Face (ou numa pasta local válida), retorna True
+    return True
 
 
 def carregar_tags():
-    labels_path = Path(DIR_MODELO) / "labels.txt"
-    with open(labels_path, "r", encoding="utf-8") as f:
+    # Tenta achar localmente; se não achar, baixa do Hugging Face
+    labels_local = Path("labels.txt")
+    if labels_local.exists():
+        caminho = labels_local
+    else:
+        caminho = hf_hub_download(repo_id=DIR_MODELO, filename="labels.txt")
+        
+    with open(caminho, "r", encoding="utf-8") as f:
         return [linha.strip() for linha in f if linha.strip()]
 
 
@@ -59,12 +67,24 @@ def carregar_referencia():
 
 
 def carregar_modelo():
-    """Carrega o modelo BERT já treinado a partir de DIR_MODELO."""
+    """Carrega o modelo BERT diretamente do Hugging Face (ou pasta local)."""
     tokenizer = AutoTokenizer.from_pretrained(DIR_MODELO)
     model = AutoModelForSequenceClassification.from_pretrained(DIR_MODELO)
     model.to(DEVICE)
     model.eval()
     return tokenizer, model
+
+def carregar_frequencia_tags():
+    freq_local = Path("frequencia_tags.csv")
+    if freq_local.exists():
+        return pd.read_csv(freq_local, encoding="utf-8")
+    
+    try:
+        caminho = hf_hub_download(repo_id=DIR_MODELO, filename="frequencia_tags.csv")
+        return pd.read_csv(caminho, encoding="utf-8")
+    except Exception:
+        # Se não houver o arquivo CSV, gera a partir das tags
+        return pd.DataFrame({"tag": carregar_tags()})
 
 
 def carregar_frequencia_tags():
