@@ -68,7 +68,7 @@ def carregar_referencia():
 
 def carregar_modelo():
     """Carrega o modelo BERT diretamente do Hugging Face (ou pasta local)."""
-    tokenizer = AutoTokenizer.from_pretrained(DIR_MODELO)
+    tokenizer = AutoTokenizer.from_pretrained(DIR_MODELO, use_fast=False)
     model = AutoModelForSequenceClassification.from_pretrained(DIR_MODELO)
     model.to(DEVICE)
     model.eval()
