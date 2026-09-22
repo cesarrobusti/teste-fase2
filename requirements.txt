@@ -1,0 +1,47 @@
+# Dependências do classificador_impacto.py
+# Instale com: pip install -r requirements.txt
+#
+# Versões escolhidas para serem compatíveis entre si (torch + transformers
+# + numpy). Se seu PC tiver GPU NVIDIA e quiser usar CUDA, veja a nota
+# abaixo antes de instalar o torch.
+
+numpy<2
+pandas>=2.0
+openpyxl>=3.1
+scikit-learn>=1.3
+torch>=2.2,<2.4
+transformers>=4.38,<4.45
+accelerate>=0.27
+streamlit>=1.62  # >=1.62 necessário para st.column_config.MultiselectColumn (Passo ④)
+python-docx>=1.1
+
+# Para o classificador SetFit (treinar_modelo_setfit.py)
+setfit>=1.0.3
+datasets>=2.18
+
+# Para o classificador TF-IDF + Regressão Logística
+# (joblib normalmente já vem junto com o scikit-learn, mas
+# listamos explicitamente por clareza)
+joblib>=1.3
+
+# Para o comentário interpretativo com IA (Biblio AI / Google Gemini).
+# Cada pesquisador usa a própria chave gratuita — veja o app.
+# IMPORTANTE: use "google-genai" (SDK novo/unificado do Google).
+# O pacote antigo "google-generativeai" foi descontinuado pelo
+# Google — não instale esse no lugar deste.
+google-genai>=1.0
+
+# ------------------------------------------------------------
+# NOTA SOBRE GPU (opcional, acelera MUITO o treinamento):
+#
+# O comando acima instala o torch para CPU. Se você tem placa
+# de vídeo NVIDIA, é melhor instalar o torch com suporte a CUDA
+# ANTES de rodar "pip install -r requirements.txt", seguindo as
+# instruções em: https://pytorch.org/get-started/locally/
+#
+# Exemplo (CUDA 12.1):
+#   pip install torch --index-url https://download.pytorch.org/whl/cu121
+#
+# Depois disso, rode o pip install -r requirements.txt normalmente
+# (ele vai pular o torch, pois já estará instalado).
+# ------------------------------------------------------------
