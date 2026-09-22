@@ -19,7 +19,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 from huggingface_hub import hf_hub_download
 
 import torch
-from transformers import BertTokenizerFast, AutoModelForSequenceClassification
+from transformers import BertTokenizerFast, BertForSequenceClassification, AutoConfig
+from config import DIR_MODELO, MODEL_NAME
 from docx import Document
 
 from config import (
@@ -67,9 +68,20 @@ def carregar_referencia():
 
 
 def carregar_modelo():
-    """Carrega o tokenizer e o modelo BERT a partir do Hugging Face."""
+    """Carrega o tokenizer e o modelo BERT com configuração explícita."""
+    # Tokenizer direto do repositório
     tokenizer = BertTokenizerFast.from_pretrained(DIR_MODELO)
-    model = AutoModelForSequenceClassification.from_pretrained(DIR_MODELO)
+    
+    # Carrega a configuração original do BERTimbau e associa ao repositório
+    try:
+        config = AutoConfig.from_pretrained(DIR_MODELO)
+    except Exception:
+        # Fallback caso falte model_type no config.json do Hugging Face
+        config = AutoConfig.from_pretrained(MODEL_NAME)
+    
+    # Carrega o modelo com a arquitetura Bert explicitada
+    model = BertForSequenceClassification.from_pretrained(DIR_MODELO, config=config)
+    
     model.to(DEVICE)
     model.eval()
     return tokenizer, model
