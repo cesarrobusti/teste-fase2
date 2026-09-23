@@ -520,10 +520,10 @@ if "resultados_finais" in st.session_state:
                 tags = linha["tags_corrigidas"]
                 if isinstance(tags, list) and tags:
                     tags_formatadas = " | ".join(tags)
+                    # Usando exatamente os nomes das colunas da sua planilha:
                     linhas_para_salvar.append({
-                        "arquivo": linha["arquivo"],
-                        "trecho": linha["trecho"],
-                        "tags_corrigidas": tags_formatadas,
+                        "quotation": linha["trecho"],
+                        "codes": tags_formatadas,
                         "data_revisao": agora
                     })
 
@@ -532,22 +532,27 @@ if "resultados_finais" in st.session_state:
                     try:
                         conn = st.connection("gsheets", type=GSheetsConnection)
 
-                        # Tenta ler o que já existe na planilha
+                        # Tenta ler a aba Sheet1
                         try:
-                            dados_antigos = conn.read(ttl=0)
+                            dados_antigos = conn.read(worksheet="Sheet1", ttl=0)
                             if dados_antigos is None or dados_antigos.empty:
-                                dados_antigos = pd.DataFrame(columns=["arquivo", "trecho", "tags_corrigidas", "data_revisao"])
+                                dados_antigos = pd.DataFrame(columns=["quotation", "codes", "data_revisao"])
+                            else:
+                                # Remove eventuais linhas em branco lidas da planilha
+                                dados_antigos = dados_antigos.dropna(how="all")
                         except Exception:
-                            dados_antigos = pd.DataFrame(columns=["arquivo", "trecho", "tags_corrigidas", "data_revisao"])
+                            dados_antigos = pd.DataFrame(columns=["quotation", "codes", "data_revisao"])
 
                         novos_dados = pd.DataFrame(linhas_para_salvar)
                         dados_totais = pd.concat([dados_antigos, novos_dados], ignore_index=True)
 
-                        # Envia para a planilha online
-                        conn.update(data=dados_totais)
+                        # Atualiza explicitamente a aba Sheet1
+                        conn.update(worksheet="Sheet1", data=dados_totais)
                         st.success(f"✅ {len(linhas_para_salvar)} trecho(s) salvo(s) com sucesso no Google Sheets!")
                     except Exception as e:
-                        st.error(f"Erro ao salvar na planilha: {e}")
+                        import traceback
+                        st.error(f"Erro ao salvar na planilha: {str(e)}")
+                        st.code(traceback.format_exc())
             else:
                 st.warning("Nenhum trecho com tags selecionadas foi marcado para incluir — nada foi salvo.")
 
