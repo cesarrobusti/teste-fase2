@@ -43,7 +43,7 @@ from datetime import datetime
 
 import pandas as pd
 import streamlit as st
-
+from streamlit_gsheets import GSheetsConnection
 from config import DIR_MODELO, SIMILARITY_THRESHOLD, CLASSIFICATION_THRESHOLD
 import impacto_core as core
 from dados_treino import salvar_revisoes
@@ -510,8 +510,46 @@ if "resultados_finais" in st.session_state:
             key="editor_revisao",
         )
 
-        if st.button("💾 Salvar correções para o próximo treino", type="primary"):
-            selecionadas = tabela_editada[tabela_editada["incluir_no_treino"]]
+if st.button("💾 Salvar correções para o próximo treino", type="primary"):
+    selecionadas = tabela_editada[tabela_editada["incluir_no_treino"]]
+
+    linhas_para_salvar = []
+    agora = datetime.now().strftime("%Y-%m-%d %H:%M")
+
+    for _, linha in selecionadas.iterrows():
+        tags = linha["tags_corrigidas"]
+        if isinstance(tags, list) and tags:
+            tags_formatadas = " | ".join(tags)
+            linhas_para_salvar.append({
+                "arquivo": linha["arquivo"],
+                "trecho": linha["trecho"],
+                "tags_corrigidas": tags_formatadas,
+                "data_revisao": agora
+            })
+
+    if linhas_para_salvar:
+        with st.spinner("Salvando revisões no Google Sheets..."):
+            try:
+                conn = st.connection("gsheets", type=GSheetsConnection)
+                
+                # Tenta ler o que já existe na planilha
+                try:
+                    dados_antigos = conn.read(ttl=0)
+                    if dados_antigos is None or dados_antigos.empty:
+                        dados_antigos = pd.DataFrame(columns=["arquivo", "trecho", "tags_corrigidas", "data_revisao"])
+                except Exception:
+                    dados_antigos = pd.DataFrame(columns=["arquivo", "trecho", "tags_corrigidas", "data_revisao"])
+
+                novos_dados = pd.DataFrame(linhas_para_salvar)
+                dados_totais = pd.concat([dados_antigos, novos_dados], ignore_index=True)
+
+                # Envia para a planilha online
+                conn.update(data=dados_totais)
+                st.success(f"✅ {len(linhas_para_salvar)} trecho(s) salvo(s) com sucesso no Google Sheets!")
+            except Exception as e:
+                st.error(f"Erro ao salvar na planilha: {e}")
+    else:
+        st.warning("Nenhum trecho com tags selecionadas foi marcado para incluir — nada foi salvo.")
 
             pares = []
             for _, linha in selecionadas.iterrows():
